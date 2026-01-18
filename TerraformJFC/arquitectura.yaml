@@ -1,0 +1,355 @@
+# E-Commerce JFC - Diagrama de Arquitectura AWS
+
+Diagram:
+  DefinitionFiles:
+    - Type: URL
+      Url: "https://raw.githubusercontent.com/awslabs/diagram-as-code/main/definitions/definition-for-aws-icons-light.yaml"
+
+  Resources:
+    Canvas:
+      Type: AWS::Diagram::Canvas
+      Direction: vertical
+      Children:
+        - Usuario
+        - AWSCloud
+
+    Usuario:
+      Type: AWS::Diagram::Resource
+      Preset: User
+      Title: "Usuario"
+
+    AWSCloud:
+      Type: AWS::Diagram::Cloud
+      Preset: AWSCloudNoLogo
+      Direction: horizontal
+      Align: center
+      Children:
+        - ColumnaIzquierda
+        - VPC
+
+    # COLUMNA IZQUIERDA - Servicios AWS
+    ColumnaIzquierda:
+      Type: AWS::Diagram::VerticalStack
+      Children:
+        - ECR
+        - CloudWatch
+        - DynamoDB
+
+    ECR:
+      Type: AWS::ECR::Repository
+      Title: "ECR"
+
+    CloudWatch:
+      Type: AWS::CloudWatch::Alarm
+      Title: "CloudWatch"
+
+    DynamoDB:
+      Type: AWS::DynamoDB::Table
+      Title: "DynamoDB"
+
+    # VPC
+    VPC:
+      Type: AWS::EC2::VPC
+      Direction: vertical
+      Title: "VPC 10.0.0.0/16"
+      Children:
+        - SubnetsPublicas
+        - SubnetsPrivadas
+      BorderChildren:
+        - Position: N
+          Resource: IGW
+
+    IGW:
+      Type: AWS::EC2::InternetGateway
+      Title: "Internet Gateway"
+
+    # --- SUBNETS PÚBLICAS ---
+    SubnetsPublicas:
+      Type: AWS::Diagram::HorizontalStack
+      Children:
+        - SubnetPublicaA
+        - SubnetPublicaB
+
+    SubnetPublicaA:
+      Type: AWS::EC2::Subnet
+      Preset: PublicSubnet
+      Title: "Pública us-east-1a"
+      Direction: vertical
+      Children:
+        - NATGateway
+
+    NATGateway:
+      Type: AWS::EC2::NatGateway
+      Title: "NAT Gateway"
+
+    SubnetPublicaB:
+      Type: AWS::EC2::Subnet
+      Preset: PublicSubnet
+      Title: "Pública us-east-1b"
+      Direction: vertical
+      Children:
+        - ALB
+
+    ALB:
+      Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+      Preset: Application Load Balancer
+      Title: "ALB"
+
+    # --- SUBNETS PRIVADAS ---
+    SubnetsPrivadas:
+      Type: AWS::Diagram::HorizontalStack
+      Children:
+        - SubnetPrivadaA
+        - SubnetPrivadaB
+
+    SubnetPrivadaA:
+      Type: AWS::EC2::Subnet
+      Preset: PrivateSubnet
+      Title: "Privada us-east-1a"
+      Direction: vertical
+      Children:
+        - ECSClusterA
+        - ECSClusterB
+        - DatosA
+
+    SubnetPrivadaB:
+      Type: AWS::EC2::Subnet
+      Preset: PrivateSubnet
+      Title: "Privada us-east-1b"
+      Direction: vertical
+      Children:
+        - ECSClusterC
+        - DatosB
+        - DatosC
+
+    # --- ECS CLUSTER
+    ECSClusterA:
+      Type: AWS::ECS::Cluster
+      Title: "ECS Fargate Cluster Unico"
+      Children:
+        - UI
+
+    UI:
+      Type: AWS::ECS::Service
+      Title: "UI"
+
+    ECSClusterB:
+      Type: AWS::ECS::Cluster
+      Title: "ECS Fargate Cluster Unico"
+      Children:
+        - Catalogo
+        - Carrito
+
+    Catalogo:
+      Type: AWS::ECS::Service
+      Title: "Catalogo"
+
+    Carrito:
+      Type: AWS::ECS::Service
+      Title: "Carrito"
+
+    ECSClusterC:
+      Type: AWS::ECS::Cluster
+      Title: "ECS Fargate Cluster Unico"
+      Children:
+        - Checkout
+        - Ordenes
+
+    Checkout:
+      Type: AWS::ECS::Service
+      Title: "Checkout"
+
+    Ordenes:
+      Type: AWS::ECS::Service
+      Title: "Ordenes"
+
+    # --- CAPA DE DATOS ---
+    DatosA:
+      Type: AWS::Diagram::VerticalStack
+      Children:
+        - AuroraMySQL
+        - AmazonMQ
+
+    AuroraMySQL:
+      Type: AWS::RDS::DBCluster
+      Title: "Aurora Serverless v2 MySQL"
+
+    AmazonMQ:
+      Type: AWS::AmazonMQ::Broker
+      Title: "Amazon MQ"
+
+    DatosB:
+      Type: AWS::Diagram::VerticalStack
+      Children:
+        - AuroraPostgres
+
+    AuroraPostgres:
+      Type: AWS::RDS::DBCluster
+      Title: "Aurora Serverless v2 Postgres SQL"
+
+    DatosC:
+      Type: AWS::Diagram::VerticalStack
+      Children:
+        - ElastiCache
+
+    ElastiCache:
+      Type: AWS::ElastiCache::CacheCluster
+      Title: "ElastiCache"
+
+  # CONEXIONES
+  Links:
+    # Usuario -> Internet Gateway
+    - Source: Usuario
+      SourcePosition: S
+      Target: IGW
+      TargetPosition: N
+      TargetArrowHead:
+        Type: Open
+
+    # Internet Gateway -> ALB
+    - Source: IGW
+      SourcePosition: S
+      Target: ALB
+      TargetPosition: N
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+    # ALB -> UI
+    - Source: ALB
+      SourcePosition: S
+      Target: UI
+      TargetPosition: N
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+    # UI -> Servicios Backend
+    - Source: UI
+      SourcePosition: W
+      Target: Catalogo
+      TargetPosition: N
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+    - Source: UI
+      SourcePosition: S
+      Target: Carrito
+      TargetPosition: N
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+    - Source: UI
+      SourcePosition: E
+      Target: Checkout
+      TargetPosition: N
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+    - Source: UI
+      SourcePosition: E
+      Target: Ordenes
+      TargetPosition: N
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+    # Catalogo -> Aurora MySQL
+    - Source: Catalogo
+      SourcePosition: S
+      Target: AuroraMySQL
+      TargetPosition: N
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+    # Fargate NatGateway
+    - Source: ECSClusterA
+      SourcePosition: W
+      Target: NATGateway
+      TargetPosition: N
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+      # Fargate NatGateway
+    - Source: ECSClusterB
+      SourcePosition: W
+      Target: NATGateway
+      TargetPosition: N
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+      # Fargate NatGateway
+    - Source: ECSClusterC
+      SourcePosition: W
+      Target: NATGateway
+      TargetPosition: E
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+    # Checkout -> ElastiCache
+    - Source: Checkout
+      SourcePosition: S
+      Target: ElastiCache
+      TargetPosition: W
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+      # Checkout -> Ordenes
+    - Source: Checkout
+      SourcePosition: E
+      Target: Ordenes
+      TargetPosition: auto
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+    # Ordenes -> Aurora PostgreSQL
+    - Source: Ordenes
+      SourcePosition: S
+      Target: AuroraPostgres
+      TargetPosition: auto
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+    # Ordenes -> Amazon MQ
+    - Source: Ordenes
+      SourcePosition: E
+      Target: AmazonMQ
+      TargetPosition: auto
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+    # NAT Gateway -> Servicios AWS (por fuera, a la izquierda)
+    - Source: NATGateway
+      SourcePosition: W
+      Target: ECR
+      TargetPosition: W
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+    - Source: NATGateway
+      SourcePosition: W
+      Target: CloudWatch
+      TargetPosition: W
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal
+
+    - Source: NATGateway
+      SourcePosition: W
+      Target: DynamoDB
+      TargetPosition: W
+      TargetArrowHead:
+        Type: Open
+      Type: orthogonal

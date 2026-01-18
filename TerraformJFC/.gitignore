@@ -1,0 +1,49 @@
+# Archivos de estado de Terraform (contienen información sensible)
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+
+# Directorio de trabajo de Terraform
+.terraform/
+.terraform.lock.hcl
+
+# Archivos de plan
+*.tfplan
+tfplan
+
+# Variables sensibles (credenciales)
+terraform.tfvars
+*.auto.tfvars
+secrets.tfvars
+
+# Archivos de override
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Archivos de crash de Terraform
+crash.log
+crash.*.log
+
+# Archivos de log
+*.log
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Archivos temporales
+*.tmp
+*.temp
+
+# Credenciales AWS (nunca subir)
+.aws/
+credentials
