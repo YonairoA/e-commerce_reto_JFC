@@ -44,6 +44,6 @@ Thumbs.db
 *.tmp
 *.temp
 
-# Credenciales AWS (nunca subir)
+# Credenciales AWS
 .aws/
 credentials
