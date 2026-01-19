@@ -88,7 +88,7 @@ variable "tags" {
 # Variables Locales
 locals {
   parameter_group_family = var.engine == "aurora-mysql" ? "aurora-mysql8.0" : "aurora-postgresql15"
-  engine_version         = var.engine == "aurora-mysql" ? "8.0.mysql_aurora.3.05.2" : "15.4"
+  engine_version         = var.engine == "aurora-mysql" ? "8.0.mysql_aurora.3.08.0" : "15.8"
   db_port                = var.engine == "aurora-mysql" ? 3306 : 5432
 }
 
@@ -193,7 +193,7 @@ resource "aws_rds_cluster_instance" "writer" {
 
 # Secrets Manager Secret
 resource "aws_secretsmanager_secret" "this" {
-  name = "${var.identifier}-db-credentials"
+  name = "${var.identifier}-db-credentials-v4"
 
   tags = merge(var.tags, { Name = "${var.identifier}-secret" })
 }

@@ -72,6 +72,12 @@ variable "dynamodb_policy_arn" {
   description = "ARN del policy de DynamoDB"
 }
 
+variable "enable_dynamodb_policy" {
+  description = "Si es true, adjunta la política"
+  type        = bool
+  default     = false
+}
+
 # Redis/Valkey
 variable "redis_endpoint" {
   type        = string
@@ -391,7 +397,7 @@ resource "aws_iam_role_policy_attachment" "ecs_exec" {
 
 # Task role - DynamoDB policy
 resource "aws_iam_role_policy_attachment" "dynamodb" {
-  count      = length(var.dynamodb_policy_arn) > 0 ? 1 : 0
+  count      = var.enable_dynamodb_policy ? 1 : 0
   role       = aws_iam_role.task.name
   policy_arn = var.dynamodb_policy_arn
 }

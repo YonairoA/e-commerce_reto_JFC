@@ -1,5 +1,3 @@
-# Arquitectura: ECS Fargate + Aurora Serverless v2 + NAT Gateway
-
 module "tags" {
   source = "./modules/tags"
 

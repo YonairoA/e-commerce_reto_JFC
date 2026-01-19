@@ -109,7 +109,7 @@ resource "aws_mq_broker" "this" {
 
 # Secrets Manager Secret
 resource "aws_secretsmanager_secret" "this" {
-  name = "${var.identifier}-mq-credentials"
+  name = "${var.identifier}-mq-credentials-v4"
 
   tags = var.tags
 }

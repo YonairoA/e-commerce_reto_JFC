@@ -79,17 +79,22 @@ resource "aws_elasticache_parameter_group" "this" {
   tags = var.tags
 }
 
-# ElastiCache Cluster
-resource "aws_elasticache_cluster" "this" {
-  cluster_id           = var.identifier
+# ElastiCache Replication Group
+resource "aws_elasticache_replication_group" "this" {
+  replication_group_id = var.identifier
+  description          = "ElastiCache ${var.engine} para ${var.environment_name}"
+
   engine               = var.engine
   engine_version       = var.engine_version
   node_type            = var.node_type
-  num_cache_nodes      = var.num_nodes
+  num_cache_clusters   = var.num_nodes
   parameter_group_name = aws_elasticache_parameter_group.this.name
   subnet_group_name    = aws_elasticache_subnet_group.this.name
   security_group_ids   = var.security_group_ids
   port                 = var.port
+
+  automatic_failover_enabled = var.num_nodes > 1 ? true : false
+  multi_az_enabled           = var.num_nodes > 1 ? true : false
 
   maintenance_window       = "sun:05:00-sun:06:00"
   snapshot_retention_limit = 0
@@ -101,22 +106,22 @@ resource "aws_elasticache_cluster" "this" {
 # Outputs
 output "id" {
   description = "ID del cluster"
-  value       = aws_elasticache_cluster.this.id
+  value       = aws_elasticache_replication_group.this.id
 }
 
 output "cluster_address" {
   description = "Dirección del cluster (hostname)"
-  value       = aws_elasticache_cluster.this.cache_nodes[0].address
+  value       = aws_elasticache_replication_group.this.primary_endpoint_address
 }
 
 output "configuration_endpoint" {
   description = "Endpoint de configuración"
-  value       = try(aws_elasticache_cluster.this.configuration_endpoint, null)
+  value       = try(aws_elasticache_replication_group.this.configuration_endpoint_address, null)
 }
 
 output "primary_endpoint" {
   description = "Endpoint primario"
-  value       = aws_elasticache_cluster.this.cache_nodes[0].address
+  value       = aws_elasticache_replication_group.this.primary_endpoint_address
   sensitive   = true
 }
 
@@ -127,5 +132,5 @@ output "port" {
 
 output "cache_nodes" {
   description = "Información de los nodos de cache"
-  value       = aws_elasticache_cluster.this.cache_nodes
+  value       = aws_elasticache_replication_group.this.member_clusters
 }

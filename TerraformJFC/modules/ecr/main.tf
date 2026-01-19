@@ -41,6 +41,17 @@ variable "tags" {
   default     = {}
 }
 
+# Mapeo de nombres de repositorio a nombres de imágenes locales
+locals {
+  image_map = {
+    "ui"       = "pragma-ui-jfc:latest"
+    "catalog"  = "pragma-catalog-jfc:latest"
+    "cart"     = "pragma-cart-jfc:latest"
+    "checkout" = "pragma-checkout-jfc:latest"
+    "orders"   = "pragma-orders-jfc:latest"
+  }
+}
+
 # Repositorios ECR
 resource "aws_ecr_repository" "this" {
   for_each = toset(var.repository_names)
@@ -154,5 +165,37 @@ output "image_uris" {
   description = "URIs de las imágenes con tag latest"
   value = {
     for name, repo in aws_ecr_repository.this : name => "${repo.repository_url}:latest"
+  }
+}
+
+# Push automático de imágenes locales a ECR
+resource "null_resource" "push_images" {
+  for_each = aws_ecr_repository.this
+
+  provisioner "local-exec" {
+    command = <<-EOF
+      echo "Enviando ${each.key} imagen a ECR..."
+      
+      # Login a ECR
+      aws ecr get-login-password --region ${data.aws_region.current.name} | \
+        docker login --username AWS --password-stdin ${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com
+      
+      # Tag de la imagen local
+      docker tag ${local.image_map[each.key]} ${each.value.repository_url}:latest
+      
+      # Push a ECR
+      docker push ${each.value.repository_url}:latest
+      
+      echo "Push correcto ${each.key} a ECR"
+    EOF
+  }
+
+  depends_on = [
+    aws_ecr_repository.this,
+    aws_ecr_repository_policy.this
+  ]
+
+  triggers = {
+    repository_url = each.value.repository_url
   }
 }
